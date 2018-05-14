@@ -119,27 +119,31 @@ The idea is that `x{| ... |}` desugars to `x({| ... |})`. This might feel more w
 
 One advantage other languages have over our blöck syntax so far is that they make it very easy to capture variables in the closure passed to the thread/task-factories. This is largely possible due to those languages' shared-memory nature, which we don't want to bring to blöcks. But we think we can get pretty close, with just a bit more syntax.
 
-Consider code that wants to find the <var>n</var>th prime, with <var>n</var> as an input. We want to do this work off the main thread. With blöcks so far, this is not so easy, as blocks are unable to refer to bindings from outside the blöck:
+Consider code like the above, but it wants to determine the endpoint from data available only on the main thread, instead of hard-coding this. With blöcks so far, this is not so easy, as blocks are unable to refer to bindings from outside the blöck:
 
 ```js
-const howHigh = document.querySelector("#how-high").valueAsNumber;
+const endpoint = document.querySelector("#endpoint").value;
 
-const thePrime = await worker{|
-  // We want to use howHigh, but we can't!
+const result = await worker{|
+  const res = await fetch(????); // We want to use endpoint, but can't!
+  const json = await res.json();
+
+  return json[2].firstName;
 |};
 ```
 
 We could make this work using the basic blöcks syntax with something like the following:
 
 ```js
-const howHigh = document.querySelector("#how-high").valueAsNumber;
+const resultComputer = workerFunction{|
+  const [endpoint] = arguments;
+  const res = await fetch(endpoint);
+  const json = await res.json();
 
-const primeComputer = workerFunction{|
-  const [howHigh] = arguments;
-  // ... use howHigh ...
+  return json[2].firstName;
 |};
 
-primeComputer(howHigh);
+const result = await resultComputer(endpoint);
 ```
 
 where `workerFunction()` is similar to `worker()`, but instead of returning a promise like `worker()` does, it returns a promise-returning function that clones its arguments.
@@ -147,15 +151,18 @@ where `workerFunction()` is similar to `worker()`, but instead of returning a pr
 This is repetitive and annoying to write. Instead, we propose the following syntax, where you can explicitly declare a list of bindings to be "captured" by the blöck:
 
 ```js
-const thePrime = await worker<howHigh>{|
-  // Use howHigh inside here
+const result = await worker<endpoint>{|
+  const res = await fetch(endpoint); // OK to use now
+  const json = await res.json();
+
+  return json[2].firstName;
 |};
 ```
 
 The semantics here are as follows:
 
-* Unlike `worker{| ... |}`, which is just sugar for a call to `worker({| ... |})`, this becomes a call to `worker({| ... |}, { howHigh })`. That is, we pass both the binding name and the binding's value to the `worker()` function.
-* The created blöck handle is explicitly noted as being "incomplete"; it cannot be reified into a function without supplying a value for the missing `howHigh` binding. This is done by calling `blöck.reify({ howHigh })`.
+* Unlike `worker{| ... |}`, which is just sugar for a call to `worker({| ... |})`, this becomes a call to `worker({| ... |}, { endpoint })`. That is, we pass both the binding name and the binding's value to the `worker()` function.
+* The created blöck handle is explicitly noted as being "incomplete"; it cannot be reified into a function without supplying a value for the missing `endpoint` binding. This is done by calling `blöck.reify({ endpoint })`.
 
 <details>
 <summary>See the implementation of <code>worker()</code> that allows capture in this way</summary>
@@ -196,6 +203,19 @@ self.onmessage = e => {
 ```
 </details>
 
+An alternative would be to not require declaring the capture outside the block, but instead provide special syntax inside the block for notating captured variables. For example:
+
+```js
+const result = await worker{|
+  const res = await fetch(${endpoint}); // Special marker syntax
+  const json = await res.json();
+
+  return json[2].firstName;
+|};
+```
+
+This would have the same semantics, with the list of missing bindings assembled by the parser scanning the contents of the blöck.
+
 ## Open questions
 
 Here are some things we aren't sure about:
@@ -214,8 +234,8 @@ There are many concepts already in this space. Here we give a brief survey of th
 Why are blöcks better than just embedding source code in a template string? E.g.
 
 ```js
-const thePrime = await worker({ howHigh }, `
-  // Use howHigh inside here
+const thePrime = await worker({ endpoint }, `
+  // Use endpoint inside here
 `);
 ```
 
@@ -231,9 +251,9 @@ A few reasons:
 A few existing libraries, such as [Clooney](https://github.com/GoogleChromeLabs/clooney) or [greenlet](https://github.com/developit/greenlet), allow syntax such as the following:
 
 ```js
-const thePrime = await greenlet(async howHigh => {
-  // Use howHigh inside here
-})(howHigh);
+const thePrime = await greenlet(async endpoint => {
+  // Use endpoint inside here
+})(endpoint);
 ```
 
 This approach is not quite as bad as using template strings, but it has similar drawbacks:
