@@ -19,7 +19,7 @@ my_thread.join();
 
 ```csharp
 // C#
-var result = await Task<string[]>.Factory.StartNew(() => {
+var result = await Task.Run(() => {
   // ... lots and lots of work ...
 });
 ```
