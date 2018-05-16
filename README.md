@@ -2,7 +2,7 @@
 
 This is a proposal to add a new syntactic construct, called (for now) "blöcks", to the JavaScript language. It is meant primarily to help with use cases around parsing and serializing blocks of code for use in other contexts, especially in other threads.
 
-The name "blöcks" is certainly temporary; we picked it for now because we keep calling these things "blocks", but we realize that that word already has meaning in JavaScript, so we shouldn't overlap with it. Hopefully we'll figure something better out soon.
+The name "blöcks" is certainly temporary; we picked it for now because we keep calling these things "blocks", but we realize that this word already has a meaning in JavaScript, so we shouldn't overlap with it. Hopefully we'll figure something better out soon.
 
 ## Motivation
 
