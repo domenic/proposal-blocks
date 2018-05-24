@@ -229,9 +229,9 @@ Here are some things we aren't sure about:
 
 There are many concepts already in this space. Here we give a brief survey of them, and note why we think proposing blöck syntax is worthwhile over using these existing alternatives.
 
-### Template strings
+### Template literals
 
-Why are blöcks better than just embedding source code in a template string? E.g.
+Why are blöcks better than just embedding source code in a template literal? E.g.
 
 ```js
 const thePrime = await worker({ endpoint }, `
@@ -241,10 +241,10 @@ const thePrime = await worker({ endpoint }, `
 
 A few reasons:
 
-* Template strings are treated as strings by the JavaScript engine and by the tooling ecosystem. This treatment is generally quite different from code.
-* The contents of these strings cannot be validated during parsing, e.g. to check for syntax errors, or to ensure no incorrect variable bindings are used.
-* Template strings cannot be nested. So, if your off-main-thread work wanted to use a multiline string, you're out of luck. Because blöcks have proper opening and closing sigils, they can be nested arbitrarily.
-* This requires first parsing the strings as strings, and then reassembling them into dynamically-created functions at their destination, which is not performant and runs afoul of anti-eval policies.
+* Template literals are treated as strings by the JavaScript engine and by the tooling ecosystem. This treatment is generally quite different from code.
+* The contents of these literals cannot be validated during parsing, e.g. to check for syntax errors, or to ensure no incorrect variable bindings are used.
+* Template literals cannot be nested. So, if your off-main-thread work wanted to use a multiline string, you're out of luck. Because blöcks have proper opening and closing sigils, they can be nested arbitrarily.
+* This requires first parsing the literals as strings, and then reassembling them into dynamically-created functions at their destination, which is not performant and runs afoul of anti-eval policies.
 
 ### Libraries accepting functions
 
@@ -256,10 +256,10 @@ const thePrime = await greenlet(async endpoint => {
 })(endpoint);
 ```
 
-This approach is not quite as bad as using template strings, but it has similar drawbacks:
+This approach is not quite as bad as using template literals, but it has similar drawbacks:
 
 * The JavaScript engine, and tooling ecosystem, has no way of knowing that these functions are not real closures; for example, they allow using closed-over variables.
-* The code gets parsed as code, then serialized via `fn.toString()`, then sent to its destination, then dynamically assembled and re-parsed as code again. This is even worse than the template string case.
+* The code gets parsed as code, then serialized via `fn.toString()`, then sent to its destination, then dynamically assembled and re-parsed as code again. This is even worse than the template literal case.
 * The syntax is less pleasant than it could be, further increasing friction.
 
 ### Tasklets
