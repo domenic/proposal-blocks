@@ -229,6 +229,32 @@ Here are some things we aren't sure about:
 
 There are many concepts already in this space. Here we give a brief survey of them, and note why we think proposing blöck syntax is worthwhile over using these existing alternatives.
 
+### Special type of function
+
+```js
+const result = await worker(serializable async (endpoint) => {
+  // Do stuff with endpoint
+})(endpoint);
+```
+
+This alternative is on sound foundations; it seems like that approach composes better with the rest of the language. For example, it lets you serialize all different types of functions, not async ones.
+
+The problem is, it's just so verbose. Compare the example above with the current proposal's
+
+```js
+const result = await worker<endpoint>{|
+  // Do stuff with endpoint
+|};
+```
+
+The first contains a lot of redundancies:
+
+* Extra punctuation
+* Repetition of the argument name/captured variable name `endpoint`, very far away from each other, which need to be synchronized
+* Redundant "worker serializable async": compare to the second, where the implication is that worker blöcks are serializable and async, so we don't need to redundantly state that.
+
+Recall this proposal's motivating goal, of making it easy to do off-main-thread work in a fashion as lightweight as in shared-memory languages. It's unclear whether we can accomplish that with the first version.
+
 ### Template strings
 
 Why are blöcks better than just embedding source code in a template string? E.g.
